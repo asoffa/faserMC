@@ -70,11 +70,19 @@ set(ROOT_LIBRARY_PROPERTIES ${ROOT_LIBRARY_PROPERTIES} SUFFIX ${libsuffix})
 set_target_properties(FaserRootClassesDict PROPERTIES ${ROOT_LIBRARY_PROPERTIES})
 target_link_libraries(FaserRootClassesDict ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
 
+REFLEX_GENERATE_DICTIONARY(FaserTrackerClasses include/FaserTrackerClasses.hh SELECTION xml/tracker_selection.xml)
+add_library(FaserTrackerClassesDict SHARED ${sources} FaserTrackerClasses.cxx)
+set(libsuffix .so)
+set(ROOT_LIBRARY_PROPERTIES ${ROOT_LIBRARY_PROPERTIES} SUFFIX ${libsuffix})
+set_target_properties(FaserTrackerClassesDict PROPERTIES ${ROOT_LIBRARY_PROPERTIES})
+target_link_libraries(FaserTrackerClassesDict ${ROOT_LIBRARIES})
+
 #----------------------------------------------------------------------------
 # Add the executable, and link it to the Geant4 libraries
 #
 add_executable(faser faser.cc ${sources} ${headers})
 target_link_libraries(faser FaserRootClassesDict ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
+target_link_libraries(faser FaserTrackerClassesDict ${ROOT_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
@@ -129,7 +137,9 @@ add_custom_target(FASER DEPENDS faser)
 #
 install(TARGETS faser DESTINATION bin)
 install(TARGETS FaserRootClassesDict DESTINATION lib)
+install(TARGETS FaserTrackerClassesDict DESTINATION lib)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/FaserRootClasses_rdict.pcm DESTINATION lib)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/FaserTrackerClasses_rdict.pcm DESTINATION lib)
 install(FILES ${FASER_SCRIPTS} DESTINATION .)
 install(FILES ${FASER_ROOT_MACROS} DESTINATION root)
 
