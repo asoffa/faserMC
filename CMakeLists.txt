@@ -68,6 +68,11 @@ if(DO_FULL_BUILD)
                       ${ROOT_INCLUDE_DIR})
   file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cc)
   file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
+else()
+  include_directories(${PROJECT_SOURCE_DIR}/include
+                      ${ROOT_INCLUDE_DIR})
+  file(GLOB sources ${PROJECT_SOURCE_DIR}/src/FaserTracker*.cc)
+  file(GLOB headers ${PROJECT_SOURCE_DIR}/include/FaserTracker*.hh)
 endif()
 
 #---------------------------------------------------------------------------
@@ -95,9 +100,8 @@ target_link_libraries(FaserTrackerClassesDict ${ROOT_LIBRARIES})
 if(DO_FULL_BUILD)
   add_executable(faser faser.cc ${sources} ${headers})
   target_link_libraries(faser FaserRootClassesDict ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
+  target_link_libraries(faser FaserTrackerClassesDict ${ROOT_LIBRARIES})
 endif()
-
-target_link_libraries(faser FaserTrackerClassesDict ${ROOT_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
@@ -165,5 +169,5 @@ if(DO_FULL_BUILD)
   install(FILES ${FASER_ROOT_MACROS} DESTINATION root)
 endif()
 
-install(TARGETS FaserTrackerClassesDict DESTINATION lib)
+install(TARGETS FaserTrackerClassesDict DESTINATION lib64)
 
