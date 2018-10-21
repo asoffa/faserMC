@@ -13,8 +13,8 @@ using std::cout;
 FaserDigitizer::FaserDigitizer(G4String name)
   : G4VDigitizerModule(name),
     fDigiMessenger(new FaserDigiMessenger(this)),
-    fNModules(2),
-    fNSensors(4),
+    fNModules(8),
+    fNSensors(2),
     fNRows(2),
     fThreshold(defaultThreshold),
     fChargeSpreadSigma(defaultChargeSpreadSigma),
@@ -35,8 +35,11 @@ void FaserDigitizer::Digitize()
   FaserDetectorConstruction* dc = (FaserDetectorConstruction*)
 	  runMan->GetUserDetectorConstruction();
   fNPlanes = dc->getSensorPlanes();
+  cout << "DIGI  FaserDigitizer::Digitize  fNPlanes set to " << fNPlanes << '\n';
   fNStrips = dc->getReadoutStrips();
+  cout << "DIGI  FaserDigitizer::Digitize  fNStrips set to " << fNStrips << '\n';
   fStripPitch = dc->getStripPitch();
+  cout << "DIGI  FaserDigitizer::Digitize  fStripPitch set to " << fStripPitch << '\n';
 
   std::map<G4int, G4AffineTransform> transforms;
   std::map<G4int, G4double> charges;

@@ -150,6 +150,8 @@ class FaserDetectorConstruction : public G4VUserDetectorConstruction
   G4Cache<FaserFieldSetup*> fFieldSetup;
 
   // internal variables
+  G4double sensor_sizeX;
+  G4double sensor_sizeY;
   G4bool checkOverlaps;
   G4NistManager* nist;
   G4Region* fRegTracker;

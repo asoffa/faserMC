@@ -21,6 +21,12 @@
 #include "G4Region.hh"
 #include "G4AutoDelete.hh"
 
+#include <string>
+#include <stdexcept>
+//TODO: Remove debug printouts to `std::cout` once setup confirmed
+#include <iostream>
+using std::cout;
+using std::runtime_error;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -91,26 +97,29 @@ void FaserDetectorConstruction::ConstructSDandField()
 
 void FaserDetectorConstruction::ConstructTrackerSensor()
 {
-  G4cout << "Updating tracking geometry: nStrips = " << sensor_readoutStrips << "\n";
+  G4cout << "Updating tracking geometry: nStrips = " << sensor_readoutStrips << '\n';
   fTrackerGeo->nStrips = sensor_readoutStrips;
 
-  G4cout << "Updating tracking geometry: stripPitch = " << sensor_stripPitch << "\n";
+  G4cout << "Updating tracking geometry: stripPitch = " << sensor_stripPitch << '\n';
   fTrackerGeo->stripPitch = sensor_readoutStrips;
 
   // sensor dimensions
   //
   // In x, there are field-shaping strips at each end, and we assume a border on each edge of sensor_gap/2
   //
-  G4double sensor_sizeX = ( sensor_readoutStrips + 2 ) * sensor_stripPitch + sensor_gap;
+  sensor_sizeX = ( sensor_readoutStrips + 2 ) * sensor_stripPitch + sensor_gap;
+  cout << "GEO  ConstructTrackerSensor  sensor_sizeX = " << sensor_sizeX/mm << '\n';
 
   // In y, there are two rows of strips, separated by a gap, and we assume border on each edge of sensor_gap/2
   //
-  G4double sensor_sizeY = ( sensor_stripLength * 2) + (sensor_gap * 2);
+  sensor_sizeY = ( sensor_stripLength * 2) + (sensor_gap * 2);
   G4cout << "Updating tracking geometry: rowOffsetY = " << 0.5*sensor_sizeY;
   fTrackerGeo->rowOffsetY = 0.5*sensor_sizeY;
   
   G4cout << "Sensor dimensions: ( " << sensor_sizeX/mm << " mm, " << sensor_sizeY/mm << " mm, "
 	 << sensor_sizeZ/mm << " mm )" << G4endl; 
+
+  cout << "GEO  sensorDelta = (" << sensor_sizeX/mm << ", " << sensor_sizeY/mm << ", " << sensor_sizeZ/mm << ")\n";
 
   // sensor volume
   //
@@ -183,13 +192,15 @@ void FaserDetectorConstruction::ConstructTrackerModule()
   ConstructTrackerSensor();
 
   const G4Box* sSensor = dynamic_cast<const G4Box*>(fLogicTrackerSensor->GetSolid());
-  G4double sensor_sizeX = 2*sSensor->GetXHalfLength();
-  G4double sensor_sizeY = 2*sSensor->GetYHalfLength();
+  sensor_sizeX = sSensor->GetXHalfLength();
+  sensor_sizeY = sSensor->GetYHalfLength();
+  cout << "GEO  ConstructTrackerModule  sensor_sizeX = " << sensor_sizeX/mm << '\n';
+  cout << "GEO  ConstructTrackerModule  sensor_sizeY = " << sensor_sizeY/mm << '\n';
 
   // sensor stereo angle (+/-)
   //
   G4cout << "Stereo angle: " << sensor_stereoAngle/mrad << " mrad" << G4endl;
-  G4cout << "Updating tracking geometry: stereoAngle = " << sensor_stereoAngle << "\n";
+  G4cout << "Updating tracking geometry: stereoAngle = " << sensor_stereoAngle << '\n';
   fTrackerGeo->stereoAngle = sensor_stereoAngle;
 
   // create rotation matrices for both senses of rotation
@@ -208,7 +219,7 @@ void FaserDetectorConstruction::ConstructTrackerModule()
   fStereoMinus->rotateY(CLHEP::pi);
   fStereoMinus->rotateZ(sensor_stereoAngle);
 
-  // support dimensions - assume a 2:1 rectangular shape
+  // support dimensions - assume a 1:1 rectangular shape
   //
   G4double support_sizeX = sensor_sizeX * cos(sensor_stereoAngle) + sensor_sizeY * sin(sensor_stereoAngle);
   G4double support_sizeY = sensor_sizeY * cos(sensor_stereoAngle) + sensor_sizeX * sin(sensor_stereoAngle) 
@@ -243,6 +254,8 @@ void FaserDetectorConstruction::ConstructTrackerModule()
   G4Box* solidModule = 
     new G4Box("Module", 0.5*module_sizeX, 0.5*module_sizeY, 0.5*module_sizeZ);
 
+  cout << "GEO  moduleDelta = (" << 0.5*module_sizeX << ", " << 0.5*module_sizeY << ", " << 0.5*module_sizeZ << ")\n";
+
   fLogicTrackerModule = 
     new G4LogicalVolume(solidModule,
 			module_mat,
@@ -263,40 +276,22 @@ void FaserDetectorConstruction::ConstructTrackerModule()
   // the same logical volume is re-used, but it is translated and rotated four different ways
   //
   new G4PVPlacement(fStereoMinus,
-                    G4ThreeVector(0.0, 0.5*sensor_sizeY/cos(sensor_stereoAngle), support_sizeZ/2 + sensor_sizeZ/2),
-	            fLogicTrackerSensor,
-	            "Sensor_PV",
-	            fLogicTrackerModule,
-	            false,
-	            0,
-	            checkOverlaps);
+                    G4ThreeVector(0.0, 0.0, support_sizeZ/2 + sensor_sizeZ/2),
+                    fLogicTrackerSensor,
+                    "Sensor_PV",
+                    fLogicTrackerModule,
+                    false,
+                    0,
+                    checkOverlaps);
 
   new G4PVPlacement(fStereoPlus,
-		    G4ThreeVector(0.0, 0.5*sensor_sizeY/cos(sensor_stereoAngle), -(support_sizeZ/2 + sensor_sizeZ/2)),
-		    fLogicTrackerSensor,
-		    "Sensor_PV",
-		    fLogicTrackerModule,
-		    false,
-		    1,
-		    checkOverlaps);
-
-  new G4PVPlacement(fStereoMinus,
-		    G4ThreeVector(0.0, -0.5*sensor_sizeY/cos(sensor_stereoAngle), support_sizeZ/2 + sensor_sizeZ/2),
-		    fLogicTrackerSensor,
-		    "Sensor_PV",
-		    fLogicTrackerModule,
-		    false,
-		    2,
-		    checkOverlaps);
-
-  new G4PVPlacement(fStereoPlus,
-		    G4ThreeVector(0.0, -0.5*sensor_sizeY/cos(sensor_stereoAngle), -(support_sizeZ/2 + sensor_sizeZ/2)),
-		    fLogicTrackerSensor,
-		    "Sensor_PV",
-		    fLogicTrackerModule,
-		    false,
-		    3,
-		    checkOverlaps);
+                    G4ThreeVector(0.0, 0.0, -(support_sizeZ/2 + sensor_sizeZ/2)),
+                    fLogicTrackerSensor,
+                    "Sensor_PV",
+                    fLogicTrackerModule,
+                    false,
+                    1,
+                    checkOverlaps);
 
 }
 
@@ -318,6 +313,7 @@ void FaserDetectorConstruction::ConstructTrackerPlane()
   const G4Box* sSensor = dynamic_cast<const G4Box*>(fLogicTrackerSensor->GetSolid());
   G4double sensor_sizeX = 2*sSensor->GetXHalfLength();
   G4double wPrime = (sensor_sizeX/2) / cos(sensor_stereoAngle);
+  cout << "GEO  ConstructTrackerPlane  sensor_sizeX = " << sensor_sizeX/mm << '\n';
 
   // overlap angle that will allow maximum x-separation without any gap
   //
@@ -326,8 +322,8 @@ void FaserDetectorConstruction::ConstructTrackerPlane()
   // corresponding x separation of modules with this angle
   //
   G4double xOffset = wPrime * cos(overlapAngle);
-  G4cout << "Updating tracking geometry: moduleOffsetX = " << xOffset << "\n";
-  fTrackerGeo->moduleOffsetX = xOffset;
+  G4cout << "Updating tracking geometry: moduleOffsetX = " << xOffset << '\n';
+  //fTrackerGeo->moduleOffsetX = xOffset;
 
   // Rotation matrix for module overlap - again, must preserve unchanged until end of job
   //
@@ -336,10 +332,17 @@ void FaserDetectorConstruction::ConstructTrackerPlane()
 
   // work out the size of the plane box that will contain both modules
   //
-  G4double plane_sizeX = 2 * xOffset + module_sizeX * cos(overlapAngle) + module_sizeZ * sin(overlapAngle);
-  G4double plane_sizeY = module_sizeY;
-  G4double plane_sizeZ = module_sizeX * sin(overlapAngle) + module_sizeZ * cos(overlapAngle);
+  //TODO: Update for SCT:
+  G4double plane_sizeX = 2 * xOffset + 2*module_sizeX * cos(overlapAngle) + module_sizeZ * sin(overlapAngle);
+  //DONE: Update for SCT:
+  G4double plane_sizeY = 2 * module_sizeY;
+  //TODO: Update for SCT:
+  G4double plane_sizeZ = module_sizeX * sin(overlapAngle) + module_sizeZ * cos(overlapAngle) + 3.0*mm; // add 3-mm z-spacing of modules
+  //TODO: Update this to correct measurements (temporary hack to get modules to be contained inside plane volume):
+  plane_sizeX *= 2; plane_sizeY *= 2; plane_sizeZ *= 2;
   G4cout << "Plane dimensions: " << plane_sizeX/mm << " mm (X), "
+	 << plane_sizeY/mm << " mm (Y), " << plane_sizeZ/mm << " mm (Z)" << G4endl;
+  cout << "DEBUG  Plane dimensions: " << plane_sizeX/mm << " mm (X), "
 	 << plane_sizeY/mm << " mm (Y), " << plane_sizeZ/mm << " mm (Z)" << G4endl;
 
   // plane volume
@@ -355,23 +358,41 @@ void FaserDetectorConstruction::ConstructTrackerPlane()
 
   // place modules inside plane
   //
-  new G4PVPlacement(fOverlapAngle,
-		    G4ThreeVector(-xOffset, 0, 0),
-		    fLogicTrackerModule,
-		    "Module_PV",
-		    fLogicTrackerPlane,
-		    false,
-		    0,
-		    checkOverlaps);
-
-  new G4PVPlacement(fOverlapAngle,
-		    G4ThreeVector(+xOffset, 0, 0),
-		    fLogicTrackerModule,
-		    "Module_PV",
-		    fLogicTrackerPlane,
-		    false,
-		    1,
- 		    checkOverlaps);
+  G4double yOffset = 0.5*sensor_sizeY + 0.05*mm; //TODO: not correct, just a hack for now
+  G4double zOffset = 1.5*mm; //TODO: Check: ~3 mm between modules => +/- 1.5 mm
+  int iModule = -1;
+  for (int yDelta = -1; yDelta <= 1; yDelta += 2) {
+    for (int xDelta = -3; xDelta <= 3; xDelta += 2) {
+      ++iModule;
+      int zDelta;
+      switch (iModule) {  // alternate between +/- (top row 0-3, bottom row 4-7)
+        case 0:
+        case 2:
+        case 5:
+        case 7:
+          zDelta = 1;
+          break;
+        case 1:
+        case 3:
+        case 4:
+        case 6:
+          zDelta = -1;
+          break;
+        default:
+          throw runtime_error {"FaserDetectorConstruction::ConstructTrackerPlane: invalid module: "+std::to_string(iModule)};
+      }
+      G4cout << "Placing module (" << xDelta*xOffset << ", " << yDelta*yOffset << ", " << zDelta*zOffset << ")\n";
+      cout << "DEBUG  Placing module (" << xDelta*xOffset << ", " << yDelta*yOffset << ", " << zDelta*zOffset << ")\n";
+      new G4PVPlacement(fOverlapAngle,
+                        G4ThreeVector(xDelta*xOffset, yDelta*yOffset, zDelta*zOffset),
+                        fLogicTrackerModule,
+                        "Module_PV",
+                        fLogicTrackerPlane,
+                        false,
+                        iModule,
+                        checkOverlaps);
+    }
+  }
 
   // define a region encompassing the tracker plane(s)
   //
@@ -527,7 +548,8 @@ void FaserDetectorConstruction::ConstructTracker()
 			checkOverlaps);
 
       double zPlane = 996.01 + firstPlaneZ + i*detector_planePitch;
-      G4cout << "Updating tracking geometry: planeZ[" << i << "] = " << zPlane << "\n";
+      G4cout << "Updating tracking geometry: planeZ[" << i << "] = " << zPlane << '\n';
+      cout << "GEO  Updating tracking geometry: planeZ[" << i << "] = " << zPlane << '\n';
       fTrackerGeo->planeZ.push_back(zPlane);
       fTrackerGeo->planeIndices_front.push_back(i);
   }
@@ -547,7 +569,8 @@ void FaserDetectorConstruction::ConstructTracker()
 			checkOverlaps);
 
       double zPlane = 996.01 + firstPlaneZ + i*detector_planePitch;
-      G4cout << "Updating tracking geometry: planeZ[" << nEndPlanes + i << "] = " << zPlane << "\n";
+      G4cout << "Updating tracking geometry: planeZ[" << nEndPlanes + i << "] = " << zPlane << '\n';
+      cout << "GEO  Updating tracking geometry: planeZ[" << nEndPlanes + i << "] = " << zPlane << '\n';
       fTrackerGeo->planeZ.push_back(zPlane);
       fTrackerGeo->planeIndices_central.push_back(nEndPlanes + i);
   }
@@ -567,7 +590,8 @@ void FaserDetectorConstruction::ConstructTracker()
 			checkOverlaps);
 
       double zPlane = 996.01 + firstPlaneZ + i*detector_planePitch;
-      G4cout << "Updating tracking geometry: planeZ[" << nEndPlanes + nCentralPlanes + i << "] = " << zPlane << "\n";
+      G4cout << "Updating tracking geometry: planeZ[" << nEndPlanes + nCentralPlanes + i << "] = " << zPlane << '\n';
+      cout << "GEO  Updating tracking geometry: planeZ[" << nEndPlanes + nCentralPlanes + i << "] = " << zPlane << '\n';
       fTrackerGeo->planeZ.push_back(zPlane);
       fTrackerGeo->planeIndices_end.push_back(nEndPlanes + nCentralPlanes + i);
   }

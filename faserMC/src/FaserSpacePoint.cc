@@ -15,13 +15,16 @@ using std::runtime_error;
 // TODO: Read this info in from FaserGeometry instead of hardcoding here:
 
 namespace Geo {
-  int nStrips = 1280;
-  double stripPitch = 0.0755; // mm
-  double stereoAngle = 0.026; // rad
+  int nStrips = 768;
+  double stripPitch = 0.08; // mm
+  double stereoAngle = 0.02; // rad
 
-  double moduleOffsetX = 48.5064; // mm, - for module 0, + for module 1
-  double sensorOffsetY = 96.938/(2.*TMath::Cos(stereoAngle)); // mm, + for sensors 0/1, - for sensors 2/3
-  //double rowOffsetY = 0.5*(48.2 + 0.269); // mm, - for row 0, + for row 1
+  //double moduleOffsetX = 31.78;
+  double moduleOffsetX = 30.865;
+  //double moduleOffsetY = 32.11;
+  //double moduleOffsetY = 62.13;
+  double moduleOffsetY = 31.065;
+  double moduleOffsetZ = 1.5;
 
   //std::map<int, double> planePosZ = { // mm
   //  { 0,    0.00 },
@@ -33,16 +36,38 @@ namespace Geo {
   //  { 6, 1942.02 },
   //  { 7, 1992.02 },
   //};
+  //std::map<int, double> planePosZ = { // mm
+  //  { 0, -0.000156387},
+  //  { 1, 49.9998},
+  //  { 2, 99.9998},
+  //  { 3, 938.03},
+  //  { 4, 988.03},
+  //  { 5, 1038.03},
+  //  { 6, 1892.02},
+  //  { 7, 1942.02},
+  //  { 8, 1992.02},
+  //};
+  //std::map<int, double> planePosZ = { // mm
+  //  { 0, 0.529861},
+  //  { 1, 50.5299},
+  //  { 2, 100.53},
+  //  { 3, 936.97},
+  //  { 4, 986.97},
+  //  { 5, 1036.97},
+  //  { 6, 1891.49},
+  //  { 7, 1941.49},
+  //  { 8, 1991.49},
+  //};
   std::map<int, double> planePosZ = { // mm
-    { 0, -0.000156387},
-    { 1, 49.9998},
-    { 2, 99.9998},
-    { 3, 938.03},
-    { 4, 988.03},
-    { 5, 1038.03},
-    { 6, 1892.02},
-    { 7, 1942.02},
-    { 8, 1992.02},
+    { 0, 0.0},
+	{ 0, 50.000039},
+	{ 0, 100.000139},
+	{ 0, 936.440139},
+	{ 0, 986.440139},
+	{ 0, 1036.440139},
+	{ 0, 1890.960139},
+	{ 0, 1940.960139},
+	{ 0, 1990.960139},
   };
 }
 
@@ -163,15 +188,63 @@ TVector3 FaserSpacePoint::GlobalPos() const
   // Shift z to center of plane
   z = Geo::planePosZ.count(Plane()) < 1 ? -10000. : Geo::planePosZ[Plane()];
 
-  // Shift to center of module
-  if (Module()==0) x += -Geo::moduleOffsetX;
-  else if (Module()==1) x += Geo::moduleOffsetX;
-  else throw runtime_error {"FaserSpacePoint::GlobalPos: invalid module: "+to_string(Module())};
+  // Shift to center of sensor:
+  switch (Module()) {
+  case 0:
+  case 4:
+    x += -3 * Geo::moduleOffsetX;
+    break;
+  case 1:
+  case 5:
+    x += -1 * Geo::moduleOffsetX;
+    break;
+  case 2:
+  case 6:
+    x +=  1 * Geo::moduleOffsetX;
+    break;
+  case 3:
+  case 7:
+    x +=  3 * Geo::moduleOffsetX;
+    break;
+  default:
+    throw runtime_error {"FaserSpacePoint::GlobalPos: invalid module: "+to_string(Module())};
+  }
 
-  // Shift to center of sensor
-  if (Sensor()==0 || Sensor()==1) y += Geo::sensorOffsetY;
-  else if (Sensor()==2 || Sensor()==3) y += -Geo::sensorOffsetY;
-  else throw runtime_error {"FaserSpacePoint::GlobalPos: invalid sensor: "+to_string(Sensor())};
+  switch (Module()) {
+  case 0:
+  case 1:
+  case 2:
+  case 3:
+    y += -Geo::moduleOffsetY;
+    break;
+  case 4:
+  case 5:
+  case 6:
+  case 7:
+    y += Geo::moduleOffsetY;
+    break;
+  default:
+    throw runtime_error {"FaserSpacePoint::GlobalPos: invalid module: "+to_string(Module())};
+  }
+
+  switch (Module()) {
+  case 0:
+  case 2:
+  case 5:
+  case 7:
+	//TODO: Figure out why the additional 3 mm is needed here:
+    z += Geo::moduleOffsetZ;
+    break;
+  case 1:
+  case 3:
+  case 4:
+  case 6:
+	//TODO: Figure out why the additional 3 mm is needed here:
+    z += -Geo::moduleOffsetZ;
+    break;
+  default:
+    throw runtime_error {"FaserSpacePoint::GlobalPos: invalid module: "+to_string(Module())};
+  }
 
   // Do *not* shift to the center of the row -- the correct origin of the local
   // coordinate system is the *sensor* center, *not* the row center.

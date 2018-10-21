@@ -94,6 +94,7 @@ void FaserEventAction::EndOfEventAction(const G4Event* g4event)
 
   for (FaserSensorHit * hit : fFaserEvent->Hits()) {
     fFaserTrackerEvent->truthHits.push_back(new FaserTrackerTruthHit {
+      hit->Track(),
       hit->Plane(),
       hit->Module(),
       hit->Sensor(),
