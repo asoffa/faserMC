@@ -22,14 +22,20 @@ FaserEvent::FaserEvent()
 
 FaserEvent::~FaserEvent()
 { 
-  for (auto p : fParticles) if (p) delete p;
-  fParticles.clear();
+  //for (auto h : fHits) if (h) delete h;
+  //fHits.clear();
 
-  for (auto c : fClusters) if (c) delete c;
-  fClusters.clear();
+  //for (auto d : fDigis) if (d) delete d;
+  //fDigis.clear();
 
-  for (auto s : fSpacePoints) if (s) delete s;
-  fSpacePoints.clear();
+  //for (auto c : fClusters) if (c) delete c;
+  //fClusters.clear();
+
+  //for (auto s : fSpacePoints) if (s) delete s;
+  //fSpacePoints.clear();
+
+  //for (auto p : fParticles) if (p) delete p;
+  //fParticles.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -95,57 +101,19 @@ void FaserEvent::SetSpacePoints()
 {
   fSpacePoints.clear();
 
-  // First find track IDs of e-/e+ or mu-/mu+ decay from dark photon
-  vector<int> decayTrackIDs;
-  for (FaserTruthParticle * particle : fParticles) {
-    if (particle->ParentID() == 1) {
-      decayTrackIDs.push_back(particle->TrackID());
-    }
-  }
+  // Group clusters on opposite sides of each module in the same row
+  for (uint i = 0; i < fClusters.size(); ++i) {
+    for (uint j = i+1; j < fClusters.size(); ++j) {
+      FaserCluster * cl_i = fClusters[i];
+      FaserCluster * cl_j = fClusters[j];
+      if (cl_i->Plane()  != cl_j->Plane() ) continue;
+      if (cl_i->Module() != cl_j->Module()) continue;
+      if (cl_i->Row()    != cl_j->Row()   ) continue;
+      if (cl_i->Sensor() == cl_j->Sensor()) continue; // opposite sides so skip if `==` here
 
-  // Look for truth hits w/ the same track ID as truth particles having parent ID 1
-  vector<FaserSensorHit*> hitsToCheck;
-  for (FaserSensorHit * hit : fHits) {
-    if (std::find(decayTrackIDs.begin(), decayTrackIDs.end(), hit->Track()) != decayTrackIDs.end()) {
-      hitsToCheck.push_back(hit);
-    }
-  }
-
-  // Group clusters on opposite sides of each module in the same row containing at least
-  // one digit on the same strip as a truth hit having in the above list
-  map<int, FaserCluster*> clusterMap_sensor0;
-  map<int, FaserCluster*> clusterMap_sensor1;
-  for (FaserCluster * cl : fClusters) {
-    for (FaserDigi * digi : cl->Digis()) {
-      for (FaserSensorHit * hit : hitsToCheck) {
-        if (hit->Plane()  != digi->Plane() ) continue;
-        if (hit->Module() != digi->Module()) continue;
-        if (hit->Sensor() != digi->Sensor()) continue;
-        if (hit->Row()    != digi->Row()   ) continue;
-        if (hit->Strip()  != digi->Strip() ) continue;
-        if (std::find(decayTrackIDs.begin(), decayTrackIDs.end(), hit->Track()) == decayTrackIDs.end()) continue;
-
-        if (hit->Sensor() == 0) clusterMap_sensor0[hit->Track()] = cl;
-        else if (hit->Sensor() == 1) clusterMap_sensor1[hit->Track()] = cl;
-        goto endClusterHitCheck;
-      }
-    }
-    endClusterHitCheck: ;
-  }
-
-  // Pair front/back clusters to form space points
-  for (auto & it0 : clusterMap_sensor0) {
-    for (auto & it1 : clusterMap_sensor1) {
-      if (it0.first != it1.first) continue;
-      FaserCluster * cl0 = it0.second;
-      FaserCluster * cl1 = it1.second;
-      if (cl0->Plane()  != cl1->Plane() ) continue;
-      if (cl0->Module() != cl1->Module()) continue;
-      if (cl0->Sensor() == cl1->Sensor()) continue; // opposite sides so skip if `==` here
-      if (cl0->Row()    != cl1->Row()) continue;
       auto sp = new FaserSpacePoint;
-      sp->AddCluster(cl0);
-      sp->AddCluster(cl1);
+      sp->AddCluster(cl_i);
+      sp->AddCluster(cl_j);
       fSpacePoints.push_back(sp);
     }
   }
