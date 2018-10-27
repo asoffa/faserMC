@@ -19,11 +19,12 @@ namespace Geo {
   double stripPitch = 0.08; // mm
   double stereoAngle = 0.02; // rad
 
-  //double moduleOffsetX = 31.78;
-  double moduleOffsetX = 30.865;
+  //double moduleOffsetX = 30.865;
+  double moduleOffsetX = 30.865; // sensor delta
+  //double moduleOffsetX = 31.4801; // module delta
   //double moduleOffsetY = 32.11;
-  //double moduleOffsetY = 62.13;
-  double moduleOffsetY = 31.065;
+  double moduleOffsetY = 62.13; // sensor delta
+  //double moduleOffsetY = 62.7473; // module delta
   double moduleOffsetZ = 1.5;
 
   //std::map<int, double> planePosZ = { // mm
@@ -58,16 +59,27 @@ namespace Geo {
   //  { 7, 1941.49},
   //  { 8, 1991.49},
   //};
+  //std::map<int, double> planePosZ = { // mm
+  //  { 0, 0.0},
+  //  { 0, 50.000039},
+  //  { 0, 100.000139},
+  //  { 0, 936.440139},
+  //  { 0, 986.440139},
+  //  { 0, 1036.440139},
+  //  { 0, 1890.960139},
+  //  { 0, 1940.960139},
+  //  { 0, 1990.960139},
+  //};
   std::map<int, double> planePosZ = { // mm
-    { 0, 0.0},
-	{ 0, 50.000039},
-	{ 0, 100.000139},
-	{ 0, 936.440139},
-	{ 0, 986.440139},
-	{ 0, 1036.440139},
-	{ 0, 1890.960139},
-	{ 0, 1940.960139},
-	{ 0, 1990.960139},
+      { 0, 0.0},
+      { 1, 50.0},
+      { 2, 100.0},
+      { 3, 947.0},
+      { 4, 997.0},
+      { 5, 1047.0},
+      { 6, 1898.0},
+      { 7, 1948.0},
+      { 8, 1998.0},
   };
 }
 
