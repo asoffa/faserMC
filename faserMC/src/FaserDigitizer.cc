@@ -35,11 +35,11 @@ void FaserDigitizer::Digitize()
   FaserDetectorConstruction* dc = (FaserDetectorConstruction*)
 	  runMan->GetUserDetectorConstruction();
   fNPlanes = dc->getSensorPlanes();
-  cout << "DIGI  FaserDigitizer::Digitize  fNPlanes set to " << fNPlanes << '\n';
+  //cout << "DIGI  FaserDigitizer::Digitize  fNPlanes set to " << fNPlanes << '\n';
   fNStrips = dc->getReadoutStrips();
-  cout << "DIGI  FaserDigitizer::Digitize  fNStrips set to " << fNStrips << '\n';
+  //cout << "DIGI  FaserDigitizer::Digitize  fNStrips set to " << fNStrips << '\n';
   fStripPitch = dc->getStripPitch();
-  cout << "DIGI  FaserDigitizer::Digitize  fStripPitch set to " << fStripPitch << '\n';
+  //cout << "DIGI  FaserDigitizer::Digitize  fStripPitch set to " << fStripPitch << '\n';
 
   std::map<G4int, G4AffineTransform> transforms;
   std::map<G4int, G4double> charges;
